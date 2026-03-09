@@ -1,0 +1,274 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a registered ping pong player.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The user's avatar URL."
+        },
+        "casualStars": {
+          "type": "number",
+          "description": "The number of stars earned in casual mode."
+        },
+        "casualWins": {
+          "type": "number",
+          "description": "Total casual wins."
+        },
+        "casualLosses": {
+          "type": "number",
+          "description": "Total casual losses."
+        },
+        "rankedPoints": {
+          "type": "number",
+          "description": "Total points earned in ranked tournaments."
+        },
+        "rankedWins": {
+          "type": "number",
+          "description": "Total ranked wins."
+        },
+        "rankedLosses": {
+          "type": "number",
+          "description": "Total ranked losses."
+        },
+        "averageRank": {
+          "type": "number",
+          "description": "Average placement in weekly tournaments."
+        },
+        "tournamentsPlayed": {
+          "type": "number",
+          "description": "Total tournaments participated in."
+        },
+        "inventory": {
+          "type": "object",
+          "properties": {
+            "trophies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "name": { "type": "string" },
+                  "tournamentName": { "type": "string" },
+                  "rank": { "type": "number" },
+                  "date": { "type": "string" }
+                }
+              }
+            },
+            "titles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "showcase": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "slotId": { "type": "number" },
+              "trophyId": { "type": "string" }
+            }
+          }
+        },
+        "selectedTitle": {
+          "type": "string",
+          "description": "The title currently displayed on the user's profile."
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["dark", "light"],
+          "description": "User's preferred theme."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user was created."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "casualStars",
+        "casualWins",
+        "casualLosses",
+        "rankedPoints",
+        "rankedWins",
+        "rankedLosses",
+        "averageRank",
+        "tournamentsPlayed",
+        "createdAt"
+      ]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Represents a ping pong match between two players.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier of the match."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["casual", "ranked"],
+          "description": "The type of the match."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "ongoing", "completed", "declined", "cancelled"],
+          "description": "The current status of the match."
+        },
+        "player1Id": {
+          "type": "string",
+          "description": "The UID of the player who initiated the match."
+        },
+        "player1Name": {
+          "type": "string",
+          "description": "The display name of player 1."
+        },
+        "player1Photo": {
+          "type": "string",
+          "description": "The photo URL of player 1."
+        },
+        "player2Id": {
+          "type": "string",
+          "description": "The UID of the challenged player."
+        },
+        "player2Name": {
+          "type": "string",
+          "description": "The display name of player 2."
+        },
+        "player2Photo": {
+          "type": "string",
+          "description": "The photo URL of player 2."
+        },
+        "player1Score": {
+          "type": "number",
+          "description": "Score submitted by player 1."
+        },
+        "player2Score": {
+          "type": "number",
+          "description": "Score submitted by player 2."
+        },
+        "player1Confirmed": {
+          "type": "boolean",
+          "description": "Whether player 1 has confirmed the score."
+        },
+        "player2Confirmed": {
+          "type": "boolean",
+          "description": "Whether player 2 has confirmed the score."
+        },
+        "winnerId": {
+          "type": "string",
+          "description": "The UID of the winner."
+        },
+        "tournamentId": {
+          "type": "string",
+          "description": "The ID of the tournament if this is a ranked match."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the match was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the match was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "status",
+        "player1Id",
+        "player1Name",
+        "player2Id",
+        "player2Name",
+        "player1Confirmed",
+        "player2Confirmed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Represents a weekly ranked tournament.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier of the tournament."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["upcoming", "registration", "ongoing", "completed"],
+          "description": "The current status of the tournament."
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The start date of the tournament."
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The end date of the tournament."
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of UIDs of participating players."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the tournament was created."
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "startDate",
+        "endDate",
+        "participants",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Collection of registered users."
+    },
+    "matches/{matchId}": {
+      "schema": {
+        "$ref": "#/entities/Match"
+      },
+      "description": "Collection of all matches (casual and ranked)."
+    },
+    "tournaments/{tournamentId}": {
+      "schema": {
+        "$ref": "#/entities/Tournament"
+      },
+      "description": "Collection of weekly ranked tournaments."
+    }
+  }
+}

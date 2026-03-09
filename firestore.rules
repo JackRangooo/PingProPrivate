@@ -1,0 +1,188 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (required)
+    //   - photoURL: string (optional)
+    //   - casualStars: number (required)
+    //   - casualWins: number (required)
+    //   - casualLosses: number (required)
+    //   - rankedPoints: number (required)
+    //   - rankedWins: number (required)
+    //   - rankedLosses: number (required)
+    //   - averageRank: number (required)
+    //   - tournamentsPlayed: number (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: matches
+    // Document ID: {matchId}
+    // Fields:
+    //   - id: string (required)
+    //   - type: string (required, 'casual' | 'ranked')
+    //   - status: string (required, 'pending' | 'accepted' | 'ongoing' | 'completed' | 'declined' | 'cancelled')
+    //   - player1Id: string (required)
+    //   - player1Name: string (required)
+    //   - player1Photo: string (optional)
+    //   - player2Id: string (required)
+    //   - player2Name: string (required)
+    //   - player2Photo: string (optional)
+    //   - player1Score: number (optional)
+    //   - player2Score: number (optional)
+    //   - player1Confirmed: boolean (required)
+    //   - player2Confirmed: boolean (required)
+    //   - winnerId: string (optional)
+    //   - tournamentId: string (optional)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
+    // Collection: tournaments
+    // Document ID: {tournamentId}
+    // Fields:
+    //   - id: string (required)
+    //   - status: string (required, 'upcoming' | 'registration' | 'ongoing' | 'completed')
+    //   - startDate: timestamp (required)
+    //   - endDate: timestamp (required)
+    //   - participants: list (required)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == "a2363099340@gmail.com" && request.auth.token.email_verified == true;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser() {
+      return hasRequiredFields(['uid', 'displayName', 'casualStars', 'casualWins', 'casualLosses', 'rankedPoints', 'rankedWins', 'rankedLosses', 'averageRank', 'tournamentsPlayed', 'createdAt']) &&
+             validStringLength('uid', 1, 100) &&
+             validStringLength('displayName', 1, 50) &&
+             isValidOptionalString('photoURL', 0, 500) &&
+             request.resource.data.casualStars is number &&
+             request.resource.data.casualWins is number &&
+             request.resource.data.casualLosses is number &&
+             request.resource.data.rankedPoints is number &&
+             request.resource.data.rankedWins is number &&
+             request.resource.data.rankedLosses is number &&
+             request.resource.data.averageRank is number &&
+             request.resource.data.tournamentsPlayed is number &&
+             request.resource.data.createdAt is timestamp;
+    }
+
+    function isValidMatch() {
+      return hasRequiredFields(['id', 'type', 'status', 'player1Id', 'player1Name', 'player2Id', 'player2Name', 'player1Confirmed', 'player2Confirmed', 'createdAt', 'updatedAt']) &&
+             validStringLength('id', 1, 100) &&
+             request.resource.data.type in ['casual', 'ranked'] &&
+             request.resource.data.status in ['pending', 'accepted', 'ongoing', 'completed', 'declined', 'cancelled'] &&
+             validStringLength('player1Id', 1, 100) &&
+             validStringLength('player1Name', 1, 50) &&
+             isValidOptionalString('player1Photo', 0, 500) &&
+             validStringLength('player2Id', 1, 100) &&
+             validStringLength('player2Name', 1, 50) &&
+             isValidOptionalString('player2Photo', 0, 500) &&
+             request.resource.data.player1Confirmed is bool &&
+             request.resource.data.player2Confirmed is bool &&
+             (!( 'player1Score' in request.resource.data ) || request.resource.data.player1Score is number) &&
+             (!( 'player2Score' in request.resource.data ) || request.resource.data.player2Score is number) &&
+             isValidOptionalString('winnerId', 0, 100) &&
+             isValidOptionalString('tournamentId', 0, 100) &&
+             request.resource.data.createdAt is timestamp &&
+             request.resource.data.updatedAt is timestamp;
+    }
+
+    function isValidTournament() {
+      return hasRequiredFields(['id', 'status', 'startDate', 'endDate', 'participants', 'createdAt']) &&
+             validStringLength('id', 1, 100) &&
+             request.resource.data.status in ['upcoming', 'registration', 'ongoing', 'completed'] &&
+             request.resource.data.startDate is timestamp &&
+             request.resource.data.endDate is timestamp &&
+             request.resource.data.participants is list &&
+             request.resource.data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles for leaderboards and matchmaking
+      allow read: if isAuthenticated();
+      
+      // Users can create their own profile
+      allow create: if isOwner(userId) && isValidUser() && request.resource.data.uid == userId;
+      
+      // Users can update their own profile. 
+      // In a real app, stats should be updated by a backend. For this client-only prototype,
+      // we allow authenticated users to update other users' stats after a match, but we restrict
+      // them from changing the uid or createdAt fields.
+      allow update: if isAuthenticated() && isValidUser() && 
+                    request.resource.data.uid == resource.data.uid &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /matches/{matchId} {
+      // Anyone authenticated can read matches
+      allow read: if isAuthenticated();
+      
+      // Any authenticated user can create a match, but they must be player1
+      allow create: if isAuthenticated() && isValidMatch() && request.resource.data.player1Id == request.auth.uid;
+      
+      // Only player1 or player2 can update the match
+      allow update: if isAuthenticated() && isValidMatch() && 
+                    (request.auth.uid == resource.data.player1Id || request.auth.uid == resource.data.player2Id) &&
+                    request.resource.data.id == resource.data.id &&
+                    request.resource.data.createdAt == resource.data.createdAt &&
+                    request.resource.data.player1Id == resource.data.player1Id &&
+                    request.resource.data.player2Id == resource.data.player2Id;
+    }
+
+    match /tournaments/{tournamentId} {
+      // Anyone authenticated can read tournaments
+      allow read: if isAuthenticated();
+      
+      // Only admins can create or update tournaments
+      allow create: if isAdmin() && isValidTournament();
+      allow update: if isAdmin() && isValidTournament();
+    }
+  }
+}
